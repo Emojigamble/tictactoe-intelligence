@@ -36,6 +36,47 @@ func (g *TicTacToeGame) LegalMoves() []int {
 	return moves
 }
 
+func (g *TicTacToeGame) HasWinner() (winner Player, tie bool) {
+	var winCombinations = [][]int{
+		{0,1,2},
+		{3,4,5},
+		{6,7,8},
+		{0,3,6},
+		{1,4,7},
+		{2,5,8},
+		{0,4,8},
+		{2,4,6},
+	}
+
+	for _, combination := range winCombinations {
+		combinationType := Empty
+		for _, entry := range combination {
+			if g.Board[entry] == Empty {
+				combinationType = Empty
+				break
+			} else if combinationType == Empty || combinationType == g.Board[entry] {
+				combinationType = g.Board[entry]
+			} else {
+				combinationType = Empty
+				break
+			}
+		}
+
+		if combinationType != Empty {
+			winner = combinationType
+			break
+		}
+	}
+
+	if winner != Empty {
+		return winner, false
+	} else if len(g.LegalMoves()) == 0 {
+		return Empty, true
+	} else {
+		return Empty, false
+	}
+}
+
 func (g *TicTacToeGame) Hash() string {
 	delimiter := ","
 	boardString := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(g.Board)), delimiter), "[]")
