@@ -34,7 +34,7 @@ func TestTicTacToeGame_Hash(t *testing.T) {
 	game := TicTacToeGame{}
 	game.Init()
 
-	if game.Hash() != "43bd6f03270a43a5488e069a0539c37a30ab402b" {
+	if Hash(game.Board) != "43bd6f03270a43a5488e069a0539c37a30ab402b" {
 		t.Log("Hash for empty board did not match up")
 		t.FailNow()
 	}
