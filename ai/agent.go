@@ -5,12 +5,10 @@ import (
 	"math"
 	"math/rand"
 	"sort"
-	"time"
 )
 
 type Agent struct {
 	QTable  []StateSet
-	History []Move
 }
 
 type Move struct {
@@ -32,12 +30,12 @@ func ModifiedSigmoid(x float64) float64 {
 	return 1/(1+math.Exp(-x+4))
 }
 
-func (a *Agent) GiveReward() {
-	for i, m := range a.History {
+func (a *Agent) GiveReward(history []Move) {
+	for i, m := range history {
 		qEntry, qIndex := a.GetQEntry(game.Hash(m.Board))
 
 		reward := 1
-		rewardFactor := (i+1)/len(a.History)
+		rewardFactor := (i+1)/len(history)
 
 		field := GetField(m.Move, qEntry)
 		if field == nil {
@@ -54,12 +52,7 @@ func (a *Agent) GiveReward() {
 	}
 }
 
-// ẞ != ß   þ þ √Þ≈ç√∫
-func (a *Agent) ResetHistory() {
-	a.History = []Move{}
-}
-
-func (a *Agent) OptimalMove(g game.TicTacToeGame, train bool) int {
+func (a *Agent) OptimalMove(g game.TicTacToeGame, train bool, trainThreshold float32) int {
 	h := game.Hash(g.Board)
 	stateSet, _ := a.GetQEntry(h)
 
@@ -67,16 +60,13 @@ func (a *Agent) OptimalMove(g game.TicTacToeGame, train bool) int {
 		return stateSet.Fields[i].Value < stateSet.Fields[j].Value
 	})
 
-	rand.Seed(time.Now().Unix())
-
 	legalMoves := g.LegalMoves()
 	move := legalMoves[rand.Intn(len(legalMoves))]
 
-	if ((train == true && rand.Intn(2) == 1) || train == false) && len(stateSet.Fields) > 0 {
+	if ((train == true && rand.Intn(100) > int(trainThreshold*80)) || train == false) && len(stateSet.Fields) > 0 {
 		move = stateSet.Fields[0].Index
 	}
 
-	a.History = append(a.History, Move{g.Board, move})
 	return move
 }
 
