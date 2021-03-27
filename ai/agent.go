@@ -1,9 +1,12 @@
 package ai
 
 import (
+	"encoding/gob"
+	"fmt"
 	"github.com/Emojigamble/tictactoe-intelligence/game"
 	"math"
 	"math/rand"
+	"os"
 	"sort"
 )
 
@@ -28,6 +31,41 @@ type Field struct {
 
 func ModifiedSigmoid(x float64) float64 {
 	return 1/(1+math.Exp(-x+4))
+}
+
+func (a *Agent) LoadQTable() {
+	dataFile, err := os.Open("qtable.gob")
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	dataDecoder := gob.NewDecoder(dataFile)
+	err = dataDecoder.Decode(&a.QTable)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Printf("Loaded QTable with %d entries\n", len(a.QTable))
+
+	dataFile.Close()
+}
+
+func (a *Agent) SaveQTable() {
+	dataFile, err := os.Create("qtable.gob")
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	dataEncoder := gob.NewEncoder(dataFile)
+	dataEncoder.Encode(a.QTable)
+
+	dataFile.Close()
 }
 
 func (a *Agent) GiveReward(history []Move) {
@@ -63,7 +101,7 @@ func (a *Agent) OptimalMove(g game.TicTacToeGame, train bool, trainThreshold flo
 	legalMoves := g.LegalMoves()
 	move := legalMoves[rand.Intn(len(legalMoves))]
 
-	if ((train == true && rand.Intn(100) > int(trainThreshold*80)) || train == false) && len(stateSet.Fields) > 0 {
+	if ((train == true && rand.Intn(100) > int(trainThreshold*50)) || train == false) && len(stateSet.Fields) > 0 {
 		move = stateSet.Fields[0].Index
 	}
 

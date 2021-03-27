@@ -5,37 +5,48 @@ import (
 	"github.com/Emojigamble/tictactoe-intelligence/ai"
 	"github.com/Emojigamble/tictactoe-intelligence/game"
 	"math/rand"
-	"runtime"
+	"os"
 	"sync"
 	"time"
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	agent := ai.Agent{}
-	var wg sync.WaitGroup
+	if _, err := os.Stat("qtable.gob"); err == nil {
+		agent.LoadQTable()
+	}
 
+	var wg sync.WaitGroup
 	iterations := 500000
-	goroutines := 50
+	goroutines := 1
 
 	for goroutines > 0 {
 		wg.Add(1)
+
+		reportProgress := false
+		if goroutines == 1 {
+			reportProgress = true
+		}
+
 		go func() {
-			train(iterations, &agent)
+			train(iterations, &agent, reportProgress)
 			wg.Done()
 		}()
 
-		goroutines -= 1
+		goroutines--
 	}
 
 	wg.Wait()
 
-	fmt.Println(len(agent.QTable))
+	fmt.Println()
+	agent.SaveQTable()
+	fmt.Printf("Saved QTable with %d entries", len(agent.QTable))
 }
 
-func train(iterations int, agent *ai.Agent) {
+func train(iterations int, agent *ai.Agent, reportProgress bool) {
 	i := 1
+	step := iterations/300
 
 	g := game.TicTacToeGame{}
 	g.Init()
@@ -54,7 +65,7 @@ func train(iterations int, agent *ai.Agent) {
 		}
 
 		if g.ActivePlayer == game.One {
-			optimalMove := agent.OptimalMove(g, true, float32(i/iterations))
+			optimalMove := agent.OptimalMove(g, true, float32(i)/float32(iterations))
 			history = append(history, ai.Move{Board: g.Board, Move: optimalMove})
 			_ = g.Input(optimalMove, g.ActivePlayer)
 		} else {
@@ -63,8 +74,8 @@ func train(iterations int, agent *ai.Agent) {
 
 		i++
 
-		if i % 50000 == 0 {
-			fmt.Println(i)
+		if i%step == 0 && reportProgress {
+			fmt.Println(fmt.Sprintf("%.2f", (float32(i)/float32(iterations))*100), "%")
 			rand.Seed(time.Now().Unix())
 		}
 
